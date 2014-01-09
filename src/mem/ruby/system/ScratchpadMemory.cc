@@ -536,3 +536,22 @@ ScratchpadMemory::checkResourceAvailable(CacheResourceType res, Address addr)
         return true;
     }
 }
+
+bool
+ScratchpadMemory::isInSpm(const Address& address)
+{
+    DPRINTF(RubySpm, "checking address: %s", address);
+    return false;
+}
+void
+ScratchpadMemory::readSpmData(const Address& address, DataBlock& datablock)
+{
+    DPRINTF(RubySpm, "readSpmData NOT IMPL!\n");
+    return;
+}
+void
+ScratchpadMemory::writeSpmData(const Address& address, DataBlock& datablock)
+{
+    DPRINTF(RubySpm, "writeSpmData NOT IMPL!\n");
+    return;
+}

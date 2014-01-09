@@ -82,6 +82,11 @@ public:
     void regStats();
     bool checkResourceAvailable(CacheResourceType res, Address addr);
     void recordRequestType(CacheRequestType requestType);
+    
+    // SPM part
+    bool isInSpm(const Address& address);
+    void readSpmData(const Address& address, DataBlock& datablock);
+    void writeSpmData(const Address& address, DataBlock& datablock);
 
 public:
     Stats::Scalar m_demand_hits;
