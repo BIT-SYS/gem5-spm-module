@@ -97,10 +97,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     Fwd_GETS,   desc="GETS from other processor";
     Fwd_GET_INSTR,   desc="GET_INSTR from other processor";
 
-	Fwd_SPM_read, desc="SPM read from other processor";
-	Fwd_SPM_write, desc="SPM write from other processor";
-    
-	Data,       desc="Data for processor";
+    Data,       desc="Data for processor";
     Data_Exclusive,       desc="Data for processor";
     DataS_fromL1,       desc="data for GETS request, need to unblock directory";
     Data_all_Acks,       desc="Data for processor, all acks";
@@ -353,14 +350,24 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     if (responseIntraChipL1Network_in.isReady()) {
       peek(responseIntraChipL1Network_in, ResponseMsg, block_on="Addr") {
         assert(in_msg.Destination.isElement(machineID));
-
+		
+	if(L1Dcache.isInSpm(in_msg.Addr)){
+		if(in_msg.Type == CoherenceResponseType:DATA_SPM_READ){
+		}
+		else if(in_msg.Type == CoherenceResponseType:DATA_SPM_WRITE){
+			
+		}
+		// read call back
+		//return ;
+	} 
+	
         Entry cache_entry := getCacheEntry(in_msg.Addr);
         TBE tbe := L1_TBEs[in_msg.Addr];
 		
-		if(in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
+	if(in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
           trigger(Event:Data_Exclusive, in_msg.Addr, cache_entry, tbe);
-        } else if(in_msg.Type == CoherenceResponseType:DATA) {
-			
+        } 
+	else if(in_msg.Type == CoherenceResponseType:DATA) {
           if ((getState(tbe, cache_entry, in_msg.Addr) == State:IS ||
                getState(tbe, cache_entry, in_msg.Addr) == State:IS_I ||
                getState(tbe, cache_entry, in_msg.Addr) == State:PF_IS ||

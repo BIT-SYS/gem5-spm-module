@@ -169,7 +169,13 @@ structure (ScratchpadMemory, external = "yes") {
     void setMRU(Address);
     void recordRequestType(CacheRequestType);
     bool checkResourceAvailable(CacheResourceType, Address);
-    
+
+    //------------- by Weixing, 2014-1-8--------------------------    
+    bool isInSpm(Address);
+    void readSpmData(Address, DataBlock);
+    void writeSpmData(Address, DataBlock);
+    //------------------------------------------------------------
+
     Scalar demand_misses;
     Scalar demand_hits;
 }
