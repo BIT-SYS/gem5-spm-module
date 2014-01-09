@@ -33,6 +33,9 @@ from m5.objects import *
 from m5.defines import buildEnv
 from Ruby import create_topology
 
+class L1Spm(RubySpm):
+    latency = 3
+
 #
 # Note: the L1 Cache latency is only used by the sequencer on fast path hits
 #
@@ -76,11 +79,11 @@ def create_system(options, system, piobus, dma_ports, ruby_system):
         #
         # First create the Ruby objects associated with this cpu
         #
-        l1i_cache = L1Cache(size = options.l1i_size,
+        l1i_cache = L1Spm(size = options.l1i_size,
                             assoc = options.l1i_assoc,
                             start_index_bit = block_size_bits,
                             is_icache = True)
-        l1d_cache = L1Cache(size = options.l1d_size,
+        l1d_cache = L1Spm(size = options.l1d_size,
                             assoc = options.l1d_assoc,
                             start_index_bit = block_size_bits,
                             is_icache = False)
