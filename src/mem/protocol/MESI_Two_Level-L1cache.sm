@@ -28,8 +28,8 @@
 
 machine(L1Cache, "MESI Directory L1 Cache CMP")
  : Sequencer * sequencer,
-   ScratchpadMemory * L1Icache,
-   ScratchpadMemory  * L1Dcache,
+   CacheMemory * L1Icache,
+   CacheMemory  * L1Dcache,
    Prefetcher * prefetcher = 'NULL',
    int l2_select_num_bits,
    Cycles l1_request_latency = 2,
@@ -96,11 +96,8 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     Fwd_GETX,   desc="GETX from other processor";
     Fwd_GETS,   desc="GETS from other processor";
     Fwd_GET_INSTR,   desc="GET_INSTR from other processor";
-
-	Fwd_SPM_read, desc="SPM read from other processor";
-	Fwd_SPM_write, desc="SPM write from other processor";
     
-	Data,       desc="Data for processor";
+    Data,       desc="Data for processor";
     Data_Exclusive,       desc="Data for processor";
     DataS_fromL1,       desc="data for GETS request, need to unblock directory";
     Data_all_Acks,       desc="Data for processor, all acks";
@@ -356,19 +353,15 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
         Entry cache_entry := getCacheEntry(in_msg.Addr);
         TBE tbe := L1_TBEs[in_msg.Addr];
-		
-		if(in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
-          trigger(Event:Data_Exclusive, in_msg.Addr, cache_entry, tbe);
+        if(in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
+            trigger(Event:Data_Exclusive, in_msg.Addr, cache_entry, tbe);
         } else if(in_msg.Type == CoherenceResponseType:DATA) {
-			
           if ((getState(tbe, cache_entry, in_msg.Addr) == State:IS ||
                getState(tbe, cache_entry, in_msg.Addr) == State:IS_I ||
                getState(tbe, cache_entry, in_msg.Addr) == State:PF_IS ||
                getState(tbe, cache_entry, in_msg.Addr) == State:PF_IS_I) &&
               machineIDToMachineType(in_msg.Sender) == MachineType:L1Cache) {
-
               trigger(Event:DataS_fromL1, in_msg.Addr, cache_entry, tbe);
-
           } else if ( (getPendingAcks(tbe) - in_msg.AckCount) == 0 ) {
             trigger(Event:Data_all_Acks, in_msg.Addr, cache_entry, tbe);
           } else {
