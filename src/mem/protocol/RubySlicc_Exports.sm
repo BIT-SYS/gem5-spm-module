@@ -135,6 +135,7 @@ enumeration(RubyRequestType, desc="...", default="RubyRequestType_NULL") {
   COMMIT,            desc="Commit version";
   NULL,              desc="Invalid request type";
   FLUSH,             desc="Flush request type";
+  SPMCONFIG,         desc="Change SPM Config";
 }
 
 enumeration(SequencerRequestType, desc="...", default="SequencerRequestType_NULL") {
