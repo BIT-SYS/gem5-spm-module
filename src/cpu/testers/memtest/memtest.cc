@@ -133,6 +133,18 @@ MemTest::MemTest(const Params *p)
 
     accessRetry = false;
     dmaOutstanding = false;
+
+    for(int i = 0; i < SPM_MEM_TEST_SIZE; i++){
+    	if(i % 32 == 0){
+		addrList.push_back(baseAddr1 + id * SPM_MEM_TEST_SIZE +  i);
+	}
+    }
+
+
+    for(int i = 0; i < SPM_MEM_TEST_SIZE; i++){
+	addrList.push_back(baseAddr2 + id * SPM_MEM_TEST_SIZE + i);
+    }
+    issuedAddrNum = 0;
 }
 
 BaseMasterPort &
@@ -256,7 +268,7 @@ MemTest::tick()
     }
 
     if (accessRetry || (issueDmas && dmaOutstanding)) {
-        DPRINTF(MemTest, "MemTester waiting on accessRetry or DMA response\n");
+        //DPRINTF(MemTest, "MemTester waiting on accessRetry or DMA response\n");
         return;
     }
 
@@ -282,11 +294,21 @@ MemTest::tick()
     Request::Flags flags;
     Addr paddr;
 
+    /*  by weixing 
     if (uncacheable) {
         flags.set(Request::UNCACHEABLE);
         paddr = uncacheAddr + offset;
     } else  {
         paddr = ((base) ? baseAddr1 : baseAddr2) + offset;
+    }*/
+
+    if(issuedAddrNum < addrList.size()) {
+    	paddr = addrList[issuedAddrNum];
+	issuedAddrNum++;
+    }else{
+	base++;
+        uncacheable++;
+	exit(0);
     }
 
     // For now we only allow one outstanding request per address
@@ -295,11 +317,17 @@ MemTest::tick()
     if (outstandingAddrs.find(paddr) != outstandingAddrs.end()) {
         return;
     }
-
+    /* by weixing
     bool do_functional = (random() % 100 < percentFunctional) && !uncacheable;
+    */
+    bool do_functional = false;
+
     Request *req = new Request();
     uint8_t *result = new uint8_t[8];
 
+    /* by weixing */
+    issueDmas = false;
+    /**/
     if (issueDmas) {
         paddr &= ~((1 << dma_access_size) - 1);
         req->setPhys(paddr, 1 << dma_access_size, flags, masterId);
@@ -309,6 +337,7 @@ MemTest::tick()
         req->setPhys(paddr, 1 << access_size, flags, masterId);
         req->setThreadContext(id,0);
     }
+
     assert(req->getSize() == 1);
 
     if (cmd < percentReads) {
