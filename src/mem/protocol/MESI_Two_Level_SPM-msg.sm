@@ -43,6 +43,10 @@ enumeration(CoherenceRequestType, desc="...") {
 
   SPM_READ, desc="SPM Read";
   SPM_WRITE, desc="SPM Write";
+  
+  SPM_MoveinRequest, desc="spm request for data movein";
+  SPM_EvictionData, desc="spm eviction data to l2";
+  SPM_MoveinACK, desc="spm movein data has received completed.";
 }
 
 // CoherenceResponseType
@@ -59,6 +63,10 @@ enumeration(CoherenceResponseType, desc="...") {
   
   SPM_DATA_READ, desc="Data for L1 cache from remote node";
   SPM_DATA_WRITE, desc="Data fro L1 cache from remote node";
+  
+  SPM_MoveinAllow, desc="permission for data movein";
+  SPM_MoveinDeny, desc="deny for data movein";
+  SPM_EvictionDataACK, desc="l2 response for evicted data";
 }
 
 // RequestMsg

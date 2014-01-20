@@ -25,6 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "../../arch/mips/isa/decoder.isa"
 
 machine(L1Cache, "MESI Directory L1 Cache CMP")
  : Sequencer * sequencer,
@@ -118,8 +119,10 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     SPM_Local_Load,   desc="local request for load";
     SPM_Local_Store,  desc="local request for store";
     
-    SPM_Eviction,     desc="SPM replacement, spm --> l2cache";
-    SPM_Move_In,      desc="l1 hot data move into spm";
+    SPM_Movein_Ready, desc="has room for movein";
+	SPM_Movein_Permitted, desc="l1 hot data move into spm";
+    SPM_Movein_Ready,  desc="eviction complete, start movein";
+    SPM_Movein_Denied, desc="deny response from network";
     
     // network <--> local spm
     SPM_Remote_Load,  desc="Remote load request";
@@ -128,6 +131,8 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     
     SPM_Data,         desc="response for complete remote load/store";
     SPM_Store_Ack,    desc="response for remote store";
+    
+    
   }
 
   // TYPES
@@ -395,11 +400,17 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
         Entry cache_entry := getCacheEntry(in_msg.Addr);
         Entry spm_entry := getSpmEntry(in_msg.Addr);
         TBE tbe := L1_TBEs[in_msg.Addr];
-
+        //spm coherence 
         if (in_msg.Type == CoherenceResponseType:SPM_DATA_READ) {
           trigger(Event:SPM_Data, in_msg.Addr, spm_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_DATA_WRITE) {
           trigger(Event:SPM_Store_Ack, in_msg.Addr, spm_entry, tbe);
+        } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinAllow) {
+          trigger(Event:SPM_Movein_Permitted, in_msg.Addr, cache_entry, tbe);
+        } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinDeny) {
+          trigger(Event:SPM_Movein_Denied, in_msg.Addr, cache_entry, tbe);
+        } else if (in_msg.Type == CoherenceResponseType:SPM_EvictionDataAck) {
+          trigger(Event:SPM_Movein_Ready, in_msg.Addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
           trigger(Event:Data_Exclusive, in_msg.Addr, cache_entry, tbe);
         } else if(in_msg.Type == CoherenceResponseType:DATA) {
@@ -1040,6 +1051,8 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
       cache_entry.isPrefetch := true;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  ////////////////////SPM Party/////////////////////////////////////////////////
   //FIXME cache_entry name refactor
   action(spm_sendback_data, "spm_remote_data", desc="send spm data remotely") {
     peek(requestIntraChipL1Network_in, RequestMsg) {
@@ -1075,15 +1088,32 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   action(spm_writeDataToSpm, "spm_write") {
     // TODO writeDataToL1Cache
   }
+  
+  // 约束：该数据调用时一定不在spm(可能在cache或者在某个未结束的迁移过程)
+  action(spm_issueMoveinRequestToL2, "spm_issueMoveinRequestToL2") {
+    // TODO 判断当前数据是否需要放入spm，能不能放入，以及放入
+    // TODO 1st: 是否需要放入
+    // TODO 2nd: 发移入spm请求给L2
+  }
+  
+  action(spm_prepareMovein, "spm_prepareMovein") {
+    // TODO
+    // 0) 如果spm已经满了，则发出eviction操作
+    // 1) spm返回应该victim的首地址
+    // 2) 将victim spm数据发到L2，待L2接收到数据后，发出SPMDATA_All_Ack才算Eviction结束，那时再发出申请移入？
+    
+  }
+  
   //*****************************************************
   // TRANSITIONS
   // **transition最后操作没有dequeue的都要再次执行一遍！**
   //*****************************************************
-
+  // 发现数据在远程spm中时发出remote_load
   transition({NP,I}, SPM_Remote_Load) {
     spm_sendback_data;
     l_popRequestQueue;
   }
+  // 发现数据在远程中发出remote_store
   transition({NP,I}, SPM_Remote_Store) {
     spm_sendback_ack;
     l_popRequestQueue;
@@ -1105,14 +1135,38 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     k_popMandatoryQueue;
   }
   
+  // 发出远程load后收到的响应
   transition({NP, I}, SPM_Data) {
     //TODO
     spm_writeDataToSpm;
     spm_hitRemoteLoad;
+    //TODO pop queue
+  }
+ 
+ // 发出远程store请求后收到的相应。
+  transition({NP,I}, SPM_Store_Ack) {
+    // TODO
+    spm_hitRemoteStore
+    //TODO pop queue
   }
   
-  transition({NP,I}, SPM_Store_Ack) {
-    spm_hitRemoteStore
+  //当spm满，eviction结束后的操作
+  transition({M,E,S,I,NP}, SPM_Movein_Ready) {
+    // TODO 发出movein request
+    // 这是怎么知道要移入哪一块数据呢？
+    // 应该在eviction时就告知l2打算移入的数据，即“我要把A块移入到我的spm里面，B块数据替换出去，是否可以？”
+  }
+  
+  //收到L2发来的允许移入响应
+  transition({M,E,S,I,NP}, SPM_Movein_Permitted) {
+    //TODO
+    spm_replacement
+    // TODO 是不是需要在此处更改全局SPM映射表？
+  }
+  
+  transition({M,E,S,I,NP}, SPM_Movein_Denied) {
+    // TODO
+    
   }
   
   // Transitions for Load/Store/Replacement/WriteBack from transient states
@@ -1225,12 +1279,14 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   // Transitions from Shared
   transition({S,E,M}, Load) {
+    spm_prepareMovein;
     h_load_hit;
     uu_profileDataHit;
     k_popMandatoryQueue;
   }
 
   transition({S,E,M}, Ifetch) {
+    spm_prepareMovein;
     h_load_hit;
     uu_profileInstHit;
     k_popMandatoryQueue;
@@ -1257,6 +1313,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   // Transitions from Exclusive
 
   transition({E,M}, Store, M) {
+    spm_prepareMovein;
     hh_store_hit;
     uu_profileDataHit;
     k_popMandatoryQueue;
@@ -1351,6 +1408,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   transition(IS, Data_all_Acks, S) {
     u_writeDataToL1Cache;
+    spm_prepareMovein;
     hx_load_hit;
     s_deallocateTBE;
     o_popIncomingResponseQueue;
@@ -1367,6 +1425,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   transition(IS_I, Data_all_Acks, I) {
     u_writeDataToL1Cache;
+    spm_prepareMovein;
     hx_load_hit;
     s_deallocateTBE;
     o_popIncomingResponseQueue;
@@ -1382,6 +1441,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   transition(IS, DataS_fromL1, S) {
     u_writeDataToL1Cache;
     j_sendUnblock;
+    spm_prepareMovein;
     hx_load_hit;
     s_deallocateTBE;
     o_popIncomingResponseQueue;
@@ -1399,6 +1459,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   transition(IS_I, DataS_fromL1, I) {
     u_writeDataToL1Cache;
     j_sendUnblock;
+    spm_prepareMovein;
     hx_load_hit;
     s_deallocateTBE;
     o_popIncomingResponseQueue;
@@ -1415,6 +1476,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   // directory is blocked when sending exclusive data
   transition(IS_I, Data_Exclusive, E) {
     u_writeDataToL1Cache;
+    spm_prepareMovein;
     hx_load_hit;
     jj_sendExclusiveUnblock;
     s_deallocateTBE;
@@ -1433,6 +1495,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   transition(IS, Data_Exclusive, E) {
     u_writeDataToL1Cache;
+    spm_prepareMovein;
     hx_load_hit;
     jj_sendExclusiveUnblock;
     s_deallocateTBE;
@@ -1474,6 +1537,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   transition(IM, Data_all_Acks, M) {
     u_writeDataToL1Cache;
+    spm_prepareMovein;
     hhx_store_hit;
     jj_sendExclusiveUnblock;
     s_deallocateTBE;
@@ -1504,6 +1568,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   transition(SM, Ack_all, M) {
     jj_sendExclusiveUnblock;
+    spm_prepareMovein;
     hhx_store_hit;
     s_deallocateTBE;
     o_popIncomingResponseQueue;
