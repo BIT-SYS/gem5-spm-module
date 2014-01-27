@@ -33,6 +33,7 @@
 #define __CPU_MEMTEST_MEMTEST_HH__
 
 #include <set>
+#include <vector>
 
 #include "base/statistics.hh"
 #include "mem/mem_object.hh"
@@ -43,6 +44,8 @@
 #include "sim/sim_exit.hh"
 #include "sim/sim_object.hh"
 #include "sim/stats.hh"
+
+#define SPM_MEM_TEST_SIZE 8192
 
 class Packet;
 class MemTest : public MemObject
@@ -145,6 +148,10 @@ class MemTest : public MemObject
 
     std::set<unsigned> outstandingAddrs;
 
+    /** target addresses for SPM test */
+    std::vector<unsigned> addrList;
+    unsigned issuedAddrNum;
+ 
     unsigned blockSize;
 
     Addr blockAddrMask;

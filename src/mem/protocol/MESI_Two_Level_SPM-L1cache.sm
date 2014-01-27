@@ -391,7 +391,6 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     if (responseIntraChipL1Network_in.isReady()) {
       peek(responseIntraChipL1Network_in, ResponseMsg, block_on="Addr") {
         assert(in_msg.Destination.isElement(machineID));
-       
         Entry cache_entry := getCacheEntry(in_msg.Addr);
         Entry spm_entry := getSpmEntry(in_msg.Addr);
         TBE tbe := L1_TBEs[in_msg.Addr];
