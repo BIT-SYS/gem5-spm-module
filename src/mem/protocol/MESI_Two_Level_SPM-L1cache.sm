@@ -25,7 +25,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../arch/mips/isa/decoder.isa"
 
 machine(L1Cache, "MESI Directory L1 Cache CMP")
  : Sequencer * sequencer,
@@ -120,8 +119,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     SPM_Local_Store,  desc="local request for store";
     
     SPM_Movein_Ready, desc="has room for movein";
-	SPM_Movein_Permitted, desc="l1 hot data move into spm";
-    SPM_Movein_Ready,  desc="eviction complete, start movein";
+    SPM_Movein_Permitted, desc="l1 hot data move into spm";
     SPM_Movein_Denied, desc="deny response from network";
     
     // network <--> local spm
@@ -409,7 +407,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
           trigger(Event:SPM_Movein_Permitted, in_msg.Addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinDeny) {
           trigger(Event:SPM_Movein_Denied, in_msg.Addr, cache_entry, tbe);
-        } else if (in_msg.Type == CoherenceResponseType:SPM_EvictionDataAck) {
+        } else if (in_msg.Type == CoherenceResponseType:SPM_EvictionDataACK) {
           trigger(Event:SPM_Movein_Ready, in_msg.Addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:DATA_EXCLUSIVE) {
           trigger(Event:Data_Exclusive, in_msg.Addr, cache_entry, tbe);
@@ -1085,18 +1083,18 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
     // TODO uu_profileDataHit
   }
   
-  action(spm_writeDataToSpm, "spm_write") {
+  action(spm_writeDataToSpm, desc="spm_write") {
     // TODO writeDataToL1Cache
   }
   
   // 约束：该数据调用时一定不在spm(可能在cache或者在某个未结束的迁移过程)
-  action(spm_issueMoveinRequestToL2, "spm_issueMoveinRequestToL2") {
+  action(spm_issueMoveinRequestToL2, desc="spm_issueMoveinRequestToL2") {
     // TODO 判断当前数据是否需要放入spm，能不能放入，以及放入
     // TODO 1st: 是否需要放入
     // TODO 2nd: 发移入spm请求给L2
   }
   
-  action(spm_prepareMovein, "spm_prepareMovein") {
+  action(spm_prepareMovein, desc="spm_prepareMovein") {
     // TODO
     // 0) 如果spm已经满了，则发出eviction操作
     // 1) spm返回应该victim的首地址
@@ -1139,14 +1137,14 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   transition({NP, I}, SPM_Data) {
     //TODO
     spm_writeDataToSpm;
-    spm_hitRemoteLoad;
+    //spm_hitRemoteLoad;
     //TODO pop queue
   }
  
  // 发出远程store请求后收到的相应。
   transition({NP,I}, SPM_Store_Ack) {
     // TODO
-    spm_hitRemoteStore
+    //spm_hitRemoteStore
     //TODO pop queue
   }
   
@@ -1160,7 +1158,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   //收到L2发来的允许移入响应
   transition({M,E,S,I,NP}, SPM_Movein_Permitted) {
     //TODO
-    spm_replacement
+    //spm_replacement
     // TODO 是不是需要在此处更改全局SPM映射表？
   }
   

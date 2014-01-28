@@ -278,7 +278,7 @@ MemTest::tick()
     unsigned base = random() % 2;
     uint64_t data = random();
     unsigned access_size = random() % 4;
-    bool uncacheable = (random() % 100) < percentUncacheable;
+    //bool uncacheable = (random() % 100) < percentUncacheable;
 
     unsigned dma_access_size = random() % 4; 
 
@@ -307,7 +307,7 @@ MemTest::tick()
 	issuedAddrNum++;
     }else{
 	base++;
-        uncacheable++;
+        //uncacheable++;
 	exit(0);
     }
 
