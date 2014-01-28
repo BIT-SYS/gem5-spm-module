@@ -539,9 +539,35 @@ ScratchpadMemory::checkResourceAvailable(CacheResourceType res, Address addr)
 }
 
 bool
-ScratchpadMemory::isInSpm(const Address& address)
+ScratchpadMemory::shouldInvokeAllocate(const Address& address) const
 {
-    DPRINTF(RubySpm, "checking address: %s", address);
+    //TODO
+    // NOTE: 必须要保证两次连续调用时会返回相同值，因为eviction和movein动作是分开的。
+    DPRINTF(RubySpm, "shouldInvokeAllocate? not implemented\n");
+    return false;
+}
+
+bool
+ScratchpadMemory::spmAvail() const
+{
+    //TODO
+    DPRINTF(RubySpm, "spmAvail not implemented!\n");
+    return false;
+}
+
+bool
+ScratchpadMemory::isInLocalSpm(const Address& address) const
+{
+    //TODO
+    DPRINTF(RubySpm, "checking isInLocalSpm: %s\n", address);
+    return false;
+}
+
+bool
+ScratchpadMemory::isInSpm(const Address& address) const
+{
+    //TODO
+    DPRINTF(RubySpm, "checking address: %s\n", address);
     return false;
 }
 void
@@ -555,4 +581,9 @@ ScratchpadMemory::writeSpmData(const Address& address, DataBlock& datablock)
 {
     DPRINTF(RubySpm, "writeSpmData NOT IMPL!\n");
     return;
+}
+Address
+ScratchpadMemory::spmProbe(const Address& address) const {
+    DPRINTF(RubySpm, "spmProbe not implemented!\n");
+    return address;
 }

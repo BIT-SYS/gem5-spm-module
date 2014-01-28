@@ -84,9 +84,14 @@ public:
     void recordRequestType(CacheRequestType requestType);
     
     // SPM part
-    bool isInSpm(const Address& address);
+    bool isInSpm(const Address& address) const;
+    bool isInLocalSpm(const Address& address)const;
     void readSpmData(const Address& address, DataBlock& datablock);
     void writeSpmData(const Address& address, DataBlock& datablock);
+    bool shouldInvokeAllocate(const Address& address) const;
+    bool spmAvail() const;
+    Address spmProbe(const Address& address) const;
+
 
 public:
     Stats::Scalar m_demand_hits;
