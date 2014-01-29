@@ -471,7 +471,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
         } else if (in_msg.Type == CoherenceResponseType:SPM_DATA_WRITE) {
           trigger(Event:SPM_Store_Ack, in_msg.Addr, spm_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinAllow) {
-          trigger(Event:SPM_Movein_Permitted, in_msg.Addr, cache_entry, tbe);
+          trigger(Event:SPM_Movein_Permitted, in_msg.Addr, spm_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinDeny) {
           trigger(Event:SPM_Movein_Denied, in_msg.Addr, cache_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_EvictionDataACK) {
