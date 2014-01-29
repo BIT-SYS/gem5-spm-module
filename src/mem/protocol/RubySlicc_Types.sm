@@ -176,7 +176,8 @@ structure (ScratchpadMemory, external = "yes") {
     void readSpmData(Address, DataBlock);
     void writeSpmData(Address, DataBlock);
     Address spmProbe(Address);
-    
+    void spmDeallocate(Address);
+    AbstractCacheEntry lookupSpm(Address);
     Scalar demand_misses;
     Scalar demand_hits;
 }

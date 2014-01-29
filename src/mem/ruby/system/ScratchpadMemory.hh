@@ -91,6 +91,11 @@ public:
     bool shouldInvokeAllocate(const Address& address) const;
     bool spmAvail() const;
     Address spmProbe(const Address& address) const;
+    void spmDeallocate(const Address& address);
+    // looks an address up in the spm
+    AbstractCacheEntry* lookupSpm(const Address& address);
+    const AbstractCacheEntry* lookupSpm(const Address& address) const;    
+
 
 
 public:
@@ -122,9 +127,9 @@ private:
     int findTagInSetIgnorePermissions(Index cacheSet,
                                       const Address& tag) const;
 
-                                      // Private copy constructor and assignment operator
-                                      ScratchpadMemory(const ScratchpadMemory& obj);
-                                      ScratchpadMemory& operator=(const ScratchpadMemory& obj);
+    // Private copy constructor and assignment operator
+    ScratchpadMemory(const ScratchpadMemory& obj);
+    ScratchpadMemory& operator=(const ScratchpadMemory& obj);
 
 private:
     const std::string m_cache_name;

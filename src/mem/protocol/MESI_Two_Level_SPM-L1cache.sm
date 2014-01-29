@@ -187,7 +187,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   //TODO spm block get,现在是于原有东西兼容的!
   Entry getSpmEntry(Address addr), return_by_pointer="yes" {
-    Entry Spm_entry := static_cast(Entry, "pointer", L1Dcache[addr]);
+    Entry Spm_entry := static_cast(Entry, "pointer", L1Dcache.lookupSpm(addr));
     return Spm_entry;
   }
   
@@ -1152,8 +1152,8 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   }
   
   action(spm_profileDataHit, "spm_profileHitLoad", desc="update spm profile member") {
-    // TODO uu_profileDataHit
-    // 暂时不需要实现。
+    // FIXME uu_profileDataHit
+    
   }
   
   action(spm_writeDataToSpm, desc="spm_write") {
@@ -1178,28 +1178,57 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   action(spm_hitRemoteLoad, desc="spm_hitRemoteLoad") {
-    // TODO
+    peek(responseIntraChipL1Network_in, ResponseMsg) {
+      DataBlock db := in_msg.DataBlk;
+      sequencer.readCallback(address, db);
+    }
   }
 
   action(spm_hitRemoteStore, desc="spm_hitRemoteStore") {
-    // TODO
+    // FIXME storeCallback有什么要求呢？
+    sequencer.writeCallback(address, cache_entry.DataBlk);
   }
 
   action(spm_issueRetryResponse, desc="spm transient state received fwd msg") {
-    //TODO
+    // FIXME
     error("SPM Slicc warning: spm_issueRetryResponse !\n");
   }
 
   action(spm_deallocateSpm, desc="deallocate spm space.") {
-    //TODO
+    //将address所指的数据块销毁
+    L1Dcache.spmDeallocate(address);
   }
 
   action(spm_issueRemoteLoad, desc="data in the remote spm, get it") {
-    //TODO
+    peek(mandatoryQueue_in, RubyRequest) {
+      enqueue(requestIntraChipL1Network_out, RequestMsg, latency=l1_request_latency) {
+        out_msg.Addr := address;
+        out_msg.Type := CoherenceRequestType:SPM_READ;
+        out_msg.Requestor := machineID;
+        out_msg.Destination.add(mapAddressToRange(address, MachineType:L2Cache,
+                          l2_select_low_bit, l2_select_num_bits, intToID(0)));
+        DPRINTF(RubySlicc, "address: %s, destination: %s\n",
+                address, out_msg.Destination);
+        out_msg.MessageSize := MessageSizeType:Control;
+        out_msg.AccessMode := in_msg.AccessMode;
+      }
+    }
   }
 
   action(spm_issueRemoteStore, desc="data in the remote spm, get it") {
-    //TODO
+    peek(mandatoryQueue_in, RubyRequest) {
+      enqueue(requestIntraChipL1Network_out, RequestMsg, latency=l1_request_latency) {
+        out_msg.Addr := address;
+        out_msg.Type := CoherenceRequestType:SPM_WRITE;
+        out_msg.Requestor := machineID;
+        out_msg.Destination.add(mapAddressToRange(address, MachineType:L2Cache,
+                          l2_select_low_bit, l2_select_num_bits, intToID(0)));
+        DPRINTF(RubySlicc, "address: %s, destination: %s\n",
+                address, out_msg.Destination);
+        out_msg.MessageSize := MessageSizeType:Control;
+        out_msg.AccessMode := in_msg.AccessMode;
+      }
+    }    
   }
 
   action(spm_sendEvictedDataToL2, desc="send evicted data to l2") {
@@ -1240,8 +1269,9 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   transition({M_SPM, E_SPM, S_SPM}, {Fwd_GETX, Fwd_GETS}) {
-    // TODO 发回retry命令让requestor重新发
+    //发回retry命令让requestor重新发
     spm_issueRetryResponse;
+    l_popRequestQueue;
   }
 
   transition({NP, I}, SPM_Movein, I_SPM) {
@@ -1360,14 +1390,14 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
 
   ///////////////
   transition(IM, RequestRetry, SPM) {
-    // TODO 遇到retry重新发store命令
+    // FIXME 遇到retry重新发store命令
     // 此时数应该在SPM中了，因此需要销毁cache中的相关单元，然后转换到spm
-
+    //error("RequestRetry not implemented!\n");
   }
 
   transition(IS, RequestRetry, SPM) {
-    // TODO 遇到retry命令，重新发load命令
-
+    // FIXME 遇到retry命令，重新发load命令
+    //error("IS RequestRetry not implemented!\n");
   }
 
 

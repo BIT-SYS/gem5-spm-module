@@ -570,20 +570,53 @@ ScratchpadMemory::isInSpm(const Address& address) const
     DPRINTF(RubySpm, "checking address: %s\n", address);
     return false;
 }
+
 void
 ScratchpadMemory::readSpmData(const Address& address, DataBlock& datablock)
 {
     DPRINTF(RubySpm, "readSpmData NOT IMPL!\n");
     return;
 }
+
 void
 ScratchpadMemory::writeSpmData(const Address& address, DataBlock& datablock)
 {
     DPRINTF(RubySpm, "writeSpmData NOT IMPL!\n");
     return;
 }
+
 Address
 ScratchpadMemory::spmProbe(const Address& address) const {
     DPRINTF(RubySpm, "spmProbe not implemented!\n");
     return address;
 }
+
+void
+ScratchpadMemory::spmDeallocate(const Address& address)
+{
+    DPRINTF(RubySpm, "WARNING: spm deallocate!\n");
+}
+
+// looks an address up in the cache
+// TODO 更改为可以返回参数地址所在的block
+AbstractCacheEntry*
+ScratchpadMemory::lookupSpm(const Address& address)
+{
+    assert(address == line_address(address));
+    Index cacheSet = addressToCacheSet(address);
+    int loc = findTagInSet(cacheSet, address);
+    if(loc == -1) return NULL;
+    return m_cache[cacheSet][loc];
+}
+
+// looks an address up in the cache
+const AbstractCacheEntry*
+ScratchpadMemory::lookupSpm(const Address& address) const
+{
+    assert(address == line_address(address));
+    Index cacheSet = addressToCacheSet(address);
+    int loc = findTagInSet(cacheSet, address);
+    if(loc == -1) return NULL;
+    return m_cache[cacheSet][loc];
+}
+
