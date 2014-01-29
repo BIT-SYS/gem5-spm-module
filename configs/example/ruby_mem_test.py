@@ -80,6 +80,8 @@ options.l1d_assoc=2
 options.l1i_assoc=2
 options.l2_assoc=2
 options.l3_assoc=2
+options.spmblock_size=64
+options.spm_size="64kB"
 
 if args:
      print "Error: script doesn't take any positional arguments"

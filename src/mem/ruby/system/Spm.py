@@ -18,3 +18,7 @@ class RubySpm(SimObject):
     dataAccessLatency = Param.Cycles(1, "cycles for a data array access")
     tagAccessLatency = Param.Cycles(1, "cycles for a tag array access")
     resourceStalls = Param.Bool(False, "stall if there is a resource failure")
+
+    # ScratchpadMemory configuration
+    spm_size = Param.MemorySize("64kB")
+    spm_blksize_bit = Param.Int(6, "block size bitsize")

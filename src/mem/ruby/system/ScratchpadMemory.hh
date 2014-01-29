@@ -155,6 +155,9 @@ private:
     int m_cache_assoc;
     int m_start_index_bit;
     bool m_resource_stalls;
+
+    int m_spm_size;
+    int m_spm_block_size_bit;
 };
 
 std::ostream& operator<<(std::ostream& out, const ScratchpadMemory& obj);

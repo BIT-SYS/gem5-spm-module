@@ -74,18 +74,21 @@ def create_system(options, system, piobus, dma_ports, ruby_system):
     #
     l2_bits = int(math.log(options.num_l2caches, 2))
     block_size_bits = int(math.log(options.cacheline_size, 2))
+    spm_block_size_bits = int(math.log(options.spmblock_size, 2))
 
     for i in xrange(options.num_cpus):
         #
         # First create the Ruby objects associated with this cpu
         #
-        l1i_cache = L1Spm(size = options.l1i_size,
+        l1i_cache = L1Cache(size = options.l1i_size,
                             assoc = options.l1i_assoc,
                             start_index_bit = block_size_bits,
                             is_icache = True)
         l1d_cache = L1Spm(size = options.l1d_size,
                             assoc = options.l1d_assoc,
                             start_index_bit = block_size_bits,
+                            spmsize = options.spm_size,
+                            spm_blksize_bit = spm_block_size_bits,
                             is_icache = False)
 
         prefetcher = RubyPrefetcher.Prefetcher()
