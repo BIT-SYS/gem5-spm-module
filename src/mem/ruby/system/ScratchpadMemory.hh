@@ -92,6 +92,7 @@ public:
     bool spmAvail() const;
     Address spmProbe(const Address& address) const;
     void spmDeallocate(const Address& address);
+    AbstractCacheEntry* spmAllocate(const Address& address, AbstractCacheEntry* new_entry);
     // looks an address up in the spm
     AbstractCacheEntry* lookupSpm(const Address& address);
     const AbstractCacheEntry* lookupSpm(const Address& address) const;    
@@ -158,6 +159,9 @@ private:
 
     int m_spm_size;
     int m_spm_block_size_bit;
+    int m_spm_vector_bound;
+    // static sharing among all instances
+    static std::vector<std::vector<AbstractCacheEntry *> > m_spm;
 };
 
 std::ostream& operator<<(std::ostream& out, const ScratchpadMemory& obj);

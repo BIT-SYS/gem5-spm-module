@@ -173,9 +173,8 @@ structure (ScratchpadMemory, external = "yes") {
     bool isInLocalSpm(Address);
     bool shouldInvokeAllocate(Address);
     bool spmAvail();
-    void readSpmData(Address, DataBlock);
-    void writeSpmData(Address, DataBlock);
     Address spmProbe(Address);
+    AbstractCacheEntry spmAllocate(Address, AbstractCacheEntry);
     void spmDeallocate(Address);
     AbstractCacheEntry lookupSpm(Address);
     Scalar demand_misses;

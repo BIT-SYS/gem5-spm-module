@@ -622,3 +622,31 @@ ScratchpadMemory::lookupSpm(const Address& address) const
     return m_cache[cacheSet][loc];
 }
 
+AbstractCacheEntry*
+ScratchpadMemory::spmAllocate(const Address& address, AbstractCacheEntry* entry)
+{
+    assert(address == line_address(address));
+    assert(!isTagPresent(address));
+    assert(cacheAvail(address));
+    DPRINTF(RubySpm, "address: %s\n", address);
+
+    // Find the first open slot
+    Index cacheSet = addressToCacheSet(address);
+    std::vector<AbstractCacheEntry*> &set = m_cache[cacheSet];
+    for (int i = 0; i < m_cache_assoc; i++) {
+        if (!set[i] || set[i]->m_Permission == AccessPermission_NotPresent) {
+            set[i] = entry;  // Init entry
+            set[i]->m_Address = address;
+            set[i]->m_Permission = AccessPermission_Invalid;
+            DPRINTF(RubySpm, "Allocate clearing lock for addr: %x\n",
+                    address);
+            set[i]->m_locked = -1;
+            m_tag_index[address] = i;
+
+            m_replacementPolicy_ptr->touch(cacheSet, i, curTick());
+
+            return entry;
+        }
+    }
+    panic("Allocate didn't find an available entry");
+}

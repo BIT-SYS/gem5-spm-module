@@ -473,7 +473,7 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
         } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinAllow) {
           trigger(Event:SPM_Movein_Permitted, in_msg.Addr, spm_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_MoveinDeny) {
-          trigger(Event:SPM_Movein_Denied, in_msg.Addr, cache_entry, tbe);
+          trigger(Event:SPM_Movein_Denied, in_msg.Addr, spm_entry, tbe);
         } else if (in_msg.Type == CoherenceResponseType:SPM_EvictionDataACK) {
           DPRINTF(RubySlicc, "SPM_EvictionDataAck: ignored.");
           //trigger(Event:SPM_Movein_Ready, in_msg.Addr, cache_entry, tbe);
@@ -1253,6 +1253,13 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   action(spm_logMoveinFailure, desc="log movein failed") {
 
   }
+
+  action(spm_allocateBlock, desc="allocate new block for data") {
+    if (is_invalid(cache_entry)) {
+      set_cache_entry(L1Dcache.spmAllocate(address, new Entry));
+    }
+  }
+
   //*****************************************************
   // TRANSITIONS
   // ** transition 最后操作没有dequeue的都要再次执行一遍！**
@@ -1291,24 +1298,28 @@ machine(L1Cache, "MESI Directory L1 Cache CMP")
   }
 
   transition(S_SPM, SPM_Movein_Permitted, SPM) {
+    spm_allocateBlock;
     spm_writeDataToSpm;
     o_popIncomingResponseQueue;
     kd_wakeUpDependents;
   }
 
   transition(M_SPM, SPM_Movein_Permitted, SPM) {
+    spm_allocateBlock;
     spm_writeDataToSpm;
     o_popIncomingResponseQueue;
     kd_wakeUpDependents;    
   }
 
   transition(E_SPM, SPM_Movein_Permitted, SPM) {
+    spm_allocateBlock;
     spm_writeDataToSpm;
     o_popIncomingResponseQueue;
     kd_wakeUpDependents;
   }
 
   transition(I_SPM, SPM_Movein_Permitted, SPM) {
+    spm_allocateBlock;
     spm_writeDataToSpm;
     o_popIncomingResponseQueue;
     kd_wakeUpDependents;    
